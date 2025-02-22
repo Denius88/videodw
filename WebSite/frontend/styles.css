@@ -1,99 +1,832 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f0f2f5;
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #2ecc71;
+    --error-color: #e74c3c;
+    --background-color: #f5f6fa;
+    --container-bg: #ffffff;
 }
 
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-    background: white;
+:root[data-theme="light"] {
+    --primary-color: #4a90e2;
+    --secondary-color: #2ecc71;
+    --error-color: #e74c3c;
+    --background-color: #f5f6fa;
+    --container-bg: #ffffff;
+    --text-color: #333333;
+    --input-border: #dddddd;
+}
+
+:root[data-theme="dark"] {
+    --primary-color: #5fa9ee;
+    --secondary-color: #2ecc71;
+    --error-color: #e74c3c;
+    --background-color: #1a1a1a;
+    --container-bg: #2d2d2d;
+    --text-color: #ffffff;
+    --input-border: #4d4d4d;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;  /* Changed to column */
+    align-items: center;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: var(--text-color);
+    gap: 2rem;  /* Add gap between main elements */
+}
+
+.switch-group {
+    position: fixed;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 1000;
+}
+
+.switch-group.left {
+    left: 1rem;
+}
+
+.switch-group.right {
+    right: 1rem;
+}
+
+/* Remove the device switch from the right group */
+.switch-group.right .device-switch {
+    display: none;
+}
+
+/* Combined switch styles for all switches */
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--container-bg);
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.switch-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    border-radius: 13px;
+    background: linear-gradient(90deg, var(--primary-color) 50%, var(--container-bg) 50%);
+    background-size: 200% 100%;
+    transition: all 0.3s ease, background-position 0.4s ease;
+    cursor: pointer;
+    border: 2px solid var(--primary-color);
+    overflow: hidden;
+}
+
+.switch::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    top: 1px;
+    left: 1px;
+    background: var(--primary-color);
+    transition: transform 0.4s cubic-bezier(0.45, 1.8, 0.5, 0.75);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.switch:active::before {
+    animation: switchRipple 0.6s ease-out;
+}
+
+.switch-input {
+    display: none;
+}
+
+.switch-input:checked + .switch {
+    background-position: -100% 0;
+}
+
+.switch-input:checked + .switch::before {
+    transform: translateX(24px);
+}
+
+.switch-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+/* Universal icon animations for all switches */
+.switch-input:checked ~ .switch-icon:first-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+.switch-input:checked ~ .switch-icon:last-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.switch-input:not(:checked) ~ .switch-icon:first-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.switch-input:not(:checked) ~ .switch-icon:last-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+/* Update device switch centered styles */
+.device-switch-centered {
+    margin: 2rem auto;
+    justify-content: center;
+    background: var(--container-bg);
+}
+
+.theme-switch, .lang-switch, .device-switch {
+    position: static;
+    transform: none;
+}
+
+.theme-switch {
+    position: fixed;  /* Changed from absolute to fixed */
+    top: 1rem;
+    left: 1rem;     /* Changed from right to left */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;    /* Add gap between switch and emojis */
+    z-index: 1000;  /* Ensure it's above other elements */
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.theme-switch:hover {
+    transform: translateY(-2px);
+}
+
+.lang-switch {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1000;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.lang-switch:hover {
+    transform: translateY(-2px);
+}
+
+.device-switch {
+    position: fixed;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1000;
+}
+
+.device-switch .switch {
+    transform: rotate(-90deg);
+    margin: 1rem 0;
+}
+
+.device-icons {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+/* Add animation for device icons */
+.device-switch input:checked ~ .device-icons:first-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+.device-switch input:checked ~ .device-icons:last-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.device-switch input:not(:checked) ~ .device-icons:first-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.device-switch input:not(:checked) ~ .device-icons:last-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+.theme-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+.lang-icons {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+/* Mobile-first approach */
+.container {
+    background: var(--container-bg);
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;  /* Center container */
+    max-width: 600px;  /* Limit width */
 }
 
 h1 {
+    color: var(--primary-color);
     text-align: center;
-    color: #1a73e8;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    animation: slideDown 0.5s ease;
+}
+
+.telegram-banner {
+    background: linear-gradient(135deg, #0088cc20, #0088cc10);
+    color: #0088cc;
+    padding: 0.7rem;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    animation: slideDown 0.5s ease;
+    border: 1px solid #0088cc30;
+    font-size: 0.9rem;
+}
+
+.telegram-banner a {
+    color: #0088cc;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.telegram-banner a:hover {
+    color: #006699;
+    text-decoration: underline;
 }
 
 .download-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0.8rem;
 }
 
-input, select, button {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+input[type="text"],
+select,
+button {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    width: 100%;
+}
+
+input[type="text"] {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    outline: none;
+    transform: scale(1.01);
+}
+
+/* Animation when pasting URL */
+input[type="text"]:not(:placeholder-shown) {
+    border-color: var(--primary-color);
+    animation: pulse 0.3s ease;
+}
+
+select {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: white;
+    transition: all 0.3s ease;
+}
+
+select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    outline: none;
+}
+
+/* Animation for format selection */
+select:hover {
+    transform: scale(1.01);
 }
 
 button {
-    background-color: #1a73e8;
-    color: white;
     border: none;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    color: white;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 button:hover {
-    background-color: #1557b0;
+    background-color: #357abd;
+    transform: translateY(-2px);
 }
 
-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+button:active {
+    transform: translateY(1px);
+}
+
+/* Button click animation */
+button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+button:active::after {
+    animation: ripple 0.6s ease-out;
 }
 
 .status {
-    margin: 20px 0;
-    padding: 10px;
-    border-radius: 4px;
+    margin-top: 1rem;
+    padding: 0.8rem;
+    border-radius: 8px;
     text-align: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-weight: 500;  /* Make percentage text more visible */
+    font-size: 0.9rem;
 }
 
 .status.error {
-    background-color: #fde8e8;
-    color: #dc2626;
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--error-color);
+    opacity: 1;
 }
 
 .status.success {
-    background-color: #e8fde8;
-    color: #059669;
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--secondary-color);
+    opacity: 1;
 }
 
-.download-link {
-    display: block;
-    text-align: center;
-    padding: 12px;
-    background-color: #059669;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-top: 20px;
-}
-
-.download-link:hover {
-    background-color: #047857;
+.status.info {
+    background-color: rgba(74, 144, 226, 0.1);
+    color: var(--primary-color);
+    opacity: 1;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .progress-bar {
-    width: 100%;
-    height: 20px;
-    background-color: #ddd;
-    border-radius: 10px;
+    margin-top: 1rem;
+    height: 8px;  /* Slightly taller progress bar */
+    background-color: #eee;
+    border-radius: 4px;
     overflow: hidden;
-    margin: 20px 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);  /* Inner shadow for depth */
+    display: block !important;  /* Always show progress bar */
+}
+
+.progress-bar.visible {
+    opacity: 1;
 }
 
 .progress-fill {
-    width: 0%;
     height: 100%;
-    background-color: #1a73e8;
-    transition: width 0.3s;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    width: 0;
+    transition: width 0.5s ease-in-out;
+    border-radius: 4px;
+    background-size: 200% 100%;
+    animation: gradientMove 2s linear infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(100, 100);
+        opacity: 0;
+    }
+}
+
+/* Add new animation for URL unhook effect */
+@keyframes unhook {
+    0% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-10px);
+    }
+    40% {
+        transform: translateX(10px);
+    }
+    60% {
+        transform: translateX(-5px);
+    }
+    80% {
+        transform: translateX(5px);
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 0.5;
+    }
+}
+
+/* Add class for the unhook animation */
+.unhook-animation {
+    animation: unhook 0.5s ease-in-out forwards;
+}
+
+/* Add fade out animation */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* Add ripple effect on click */
+@keyframes switchRipple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(74, 144, 226, 0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    input[type="text"],
+    select,
+    button {
+        padding: 0.8rem;
+    }
+}
+
+/* Tablet (iPad mini and up) */
+@media screen and (min-width: 768px) {
+    .container {
+        padding: 1.5rem;
+        max-width: 90%;
+        margin: 20px auto;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .telegram-banner {
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+
+    input[type="text"],
+    select,
+    button {
+        padding: 0.9rem;
+        font-size: 1rem;
+    }
+
+    .status {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+}
+
+/* Desktop */
+@media screen and (min-width: 1024px) {
+    .container {
+        padding: 2rem;
+        max-width: 600px;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+
+    input[type="text"],
+    select,
+    button {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+}
+
+/* Large screens */
+@media screen and (min-width: 1440px) {
+    .container {
+        max-width: 700px;
+    }
+}
+
+/* Handle device orientation */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .container {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .telegram-banner {
+        margin-bottom: 1rem;
+    }
+
+    .download-form {
+        gap: 0.5rem;
+    }
+}
+
+/* Better touch targets for mobile */
+@media (hover: none) {
+    button {
+        min-height: 44px; /* Minimum touch target size */
+    }
+
+    select {
+        min-height: 44px;
+    }
+
+    .telegram-banner a {
+        padding: 0.5rem 0;
+        display: inline-block;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+    .telegram-banner {
+        border: 2px solid #0088cc;
+    }
+
+    input[type="text"],
+    select {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduce motion if user prefers */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Add scale animation for icons */
+.theme-switch input:checked ~ .theme-icons:first-of-type,
+.lang-switch input:checked ~ .lang-icons:first-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+.theme-switch input:checked ~ .theme-icons:last-of-type,
+.lang-switch input:checked ~ .lang-icons:last-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.theme-switch input:not(:checked) ~ .theme-icons:first-of-type,
+.lang-switch input:not(:checked) ~ .lang-icons:first-of-type {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.theme-switch input:not(:checked) ~ .theme-icons:last-of-type,
+.lang-switch input:not(:checked) ~ .lang-icons:last-of-type {
+    transform: scale(0.8);
+    opacity: 0.5;
+}
+
+/* Showcase grid */
+.showcase-grid {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;  /* Add bottom margin */
+    display: flex;
+    flex-direction: column;  /* Changed to column */
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.platform-showcase {
+    background: var(--container-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    aspect-ratio: 16/9;
+    position: relative;
+    flex: 1;  /* Allow equal growth */
+    min-height: 200px;  /* Minimum height */
+}
+
+.platform-showcase:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.platform-showcase h3 {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    color: white;
+    font-size: 1.2rem;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.platform-showcase video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Platform-specific styles */
+.platform-showcase.youtube {
+    border-bottom: 4px solid #ff0000;
+}
+
+.platform-showcase.instagram {
+    border-bottom: 4px solid #e1306c;
+}
+
+.platform-showcase.tiktok {
+    border-bottom: 4px solid #00f2ea;
+}
+
+/* Responsive adjustments for showcase grid */
+@media screen and (max-width: 768px) {
+    .showcase-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .showcase-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Adjust spacing for mobile */
+@media screen and (max-width: 768px) {
+    body {
+        padding: 10px;
+        gap: 1rem;
+    }
+
+    .container {
+        margin: 0;
+        padding: 1rem;
+    }
+
+    .showcase-grid {
+        padding: 0.5rem;
+        gap: 1rem;
+    }
+
+    .platform-showcase {
+        margin-bottom: 1rem;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .switch-group.right {
+        flex-direction: row;
+    }
+    
+    .switch-container {
+        padding: 0.3rem;
+    }
+    
+    .switch {
+        width: 44px;
+        height: 24px;
+    }
+    
+    .switch::before {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .switch-input:checked + .switch::before {
+        transform: translateX(20px);
+    }
+}
+
+/* Centered device switch */
+.device-switch-centered {
+    margin: 2rem auto;
+    justify-content: center;
+    padding: 0.8rem;
+    border-radius: 25px;
+    background: var(--container-bg);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.device-switch-centered:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }

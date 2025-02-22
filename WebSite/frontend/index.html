@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light" data-lang="uk" data-device="pc">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,13 +7,33 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="switch-group left">
+        <div class="switch-container theme-switch">
+            <span class="switch-icon">🌞</span>
+            <input type="checkbox" id="theme-toggle" class="switch-input">
+            <label for="theme-toggle" class="switch"></label>
+            <span class="switch-icon">🌚</span>
+        </div>
+    </div>
+
+    <div class="switch-group right">
+        <div class="switch-container lang-switch">
+            <span class="switch-icon">🇺🇦</span>
+            <input type="checkbox" id="lang-toggle" class="switch-input">
+            <label for="lang-toggle" class="switch"></label>
+            <span class="switch-icon">🇬🇧</span>
+        </div>
+    </div>
     <div class="container">
+        <div class="telegram-banner">
+            Спробуйте також наш <a href="https://t.me/zcollage_bot" target="_blank">Telegram бот</a> 🤖
+        </div>
         <h1>Відео Завантажувач</h1>
         <div class="download-form">
-            <input type="text" id="url" placeholder="Вставте URL відео..." required>
+            <input type="text" id="url" placeholder="Вставте YouTube, Instagram, або Tiktok URL" required>
             <select id="format">
-                <option value="mp4">MP4 (Відео)</option>
-                <option value="mp3">MP3 (Аудіо)</option>
+                <option value="mp4">MP4 (Відео) 🎞️</option>
+                <option value="mp3">MP3 (Аудіо) 🔈</option>
             </select>
             <button onclick="startDownload()" id="downloadBtn">Завантажити</button>
         </div>
@@ -25,6 +45,35 @@
             Завантажити файл
         </a>
     </div>
+    
+    <div class="switch-container device-switch-centered">
+        <span class="switch-icon">💻</span>
+        <input type="checkbox" id="device-toggle" class="switch-input">
+        <label for="device-toggle" class="switch"></label>
+        <span class="switch-icon">📱</span>
+    </div>
+    
+    <div class="showcase-grid" data-device="pc">
+        <div class="platform-showcase youtube">
+            <h3>YouTube</h3>
+            <video autoplay loop muted playsinline>
+                <source src="addition/youtube pc en.MP4" type="video/mp4">
+            </video>
+        </div>
+        <div class="platform-showcase instagram">
+            <h3>Instagram</h3>
+            <video autoplay loop muted playsinline>
+                <source src="addition/instagram pc en.MP4" type="video/mp4">
+            </video>
+        </div>
+        <div class="platform-showcase tiktok">
+            <h3>TikTok</h3>
+            <video autoplay loop muted playsinline>
+                <source src="addition/tiktok pc en.MP4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

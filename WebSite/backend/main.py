@@ -12,6 +12,7 @@ import asyncio
 from urllib.parse import unquote
 import re
 import urllib.parse
+import json
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +59,28 @@ def sanitize_filename(title: str) -> str:
     title = unicodedata.normalize('NFKD', title).encode('ASCII', 'ignore').decode('ASCII')
     # Then keep only alphanumeric characters and some special chars
     return "".join([c for c in title if c.isalnum() or c in ' .-_']).strip()
+
+class ProgressCallback:
+    def __init__(self):
+        self.current = 0
+        self.total = 0
+        self.status = ""
+
+    def __call__(self, d):
+        if d['status'] == 'downloading':
+            self.total = d.get('total_bytes', 0) or d.get('total_bytes_estimate', 0)
+            self.current = d.get('downloaded_bytes', 0)
+            if self.total:
+                progress = int(self.current * 100 / self.total)
+                return json.dumps({
+                    "progress": progress,
+                    "status": f"Завантаження: {d.get('filename', '')}"
+                }) + "\n"
+        elif d['status'] == 'finished':
+            return json.dumps({
+                "progress": 100,
+                "status": "Обробка завершена"
+            }) + "\n"
 
 def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
     output_folder = os.path.join(TEMP_FOLDER, download_id)
@@ -116,19 +139,25 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
                 'merge_output_format': 'mp4',
             })
 
+    progress_callback = ProgressCallback()
+    base_opts.update({
+        'progress_hooks': [progress_callback],
+        'quiet': False
+    })
+
     try:
         with yt_dlp.YoutubeDL(base_opts) as ydl:
-            try:
-                info = ydl.extract_info(url, download=True)
-            except Exception as e:
-                logger.error(f"First attempt failed: {str(e)}")
-                # Fallback options
-                if format == 'mp3':
-                    base_opts['format'] = 'best/bestaudio'
-                else:
-                    base_opts['format'] = 'best'
-                with yt_dlp.YoutubeDL(base_opts) as ydl2:
-                    info = ydl2.extract_info(url, download=True)
+            print(json.dumps({
+                "progress": 0,
+                "status": "Початок завантаження"
+            }))
+            
+            info = ydl.extract_info(url, download=True)
+            
+            print(json.dumps({
+                "progress": 95,
+                "status": "Фінальна обробка"
+            }))
 
             # Find downloaded file
             import glob
@@ -141,7 +170,7 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
                 if not files:
                     # Look for the downloaded video file that should be converted
                     video_files = glob.glob(os.path.join(output_folder, '*.[mM][pP]4'))
-                    if video_files:
+                    if (video_files):
                         # Convert video to mp3 manually if needed
                         video_path = video_files[0]
                         audio_path = os.path.splitext(video_path)[0] + '.mp3'
@@ -169,13 +198,29 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
 async def create_download(request: DownloadRequest):
     try:
         download_id = str(uuid.uuid4())
-        filename, filepath = download_media(request.url, request.format, download_id)
         
-        return {
-            "success": True,
-            "download_id": download_id,
-            "filename": filename  # Add filename to response
-        }
+        async def download_generator():
+            try:
+                filename, filepath = download_media(request.url, request.format, download_id)
+                yield json.dumps({
+                    "success": True,
+                    "download_id": download_id,
+                    "filename": filename,
+                    "progress": 100,
+                    "status": "Завантаження завершено"
+                })
+            except Exception as e:
+                yield json.dumps({
+                    "error": str(e),
+                    "progress": 0,
+                    "status": "Помилка завантаження"
+                })
+
+        return StreamingResponse(
+            download_generator(), 
+            media_type="text/event-stream"
+        )
+        
     except Exception as e:
         logger.error(f"Download error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
