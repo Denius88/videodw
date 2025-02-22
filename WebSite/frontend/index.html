@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Відео Завантажувач</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Відео Завантажувач</h1>
+        <div class="download-form">
+            <input type="text" id="url" placeholder="Вставте URL відео..." required>
+            <select id="format">
+                <option value="mp4">MP4 (Відео)</option>
+                <option value="mp3">MP3 (Аудіо)</option>
+            </select>
+            <button onclick="startDownload()" id="downloadBtn">Завантажити</button>
+        </div>
+        <div id="status" class="status"></div>
+        <div id="progress" class="progress-bar" style="display: none;">
+            <div class="progress-fill"></div>
+        </div>
+        <a id="downloadLink" class="download-link" style="display: none;">
+            Завантажити файл
+        </a>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
