@@ -53,12 +53,22 @@ class DownloadRequest(BaseModel):
                 return v
         raise ValueError('Invalid URL. Only YouTube, Instagram and TikTok URLs are supported')
 
-def sanitize_filename(title: str) -> str:
-    # First, replace any non-ASCII characters with their closest ASCII equivalents
+def sanitize_filename(title: str, platform: str = None) -> str:
+    """Sanitize filename based on platform and remove unnecessary text"""
+    # First, replace any non-ASCII characters
     import unicodedata
     title = unicodedata.normalize('NFKD', title).encode('ASCII', 'ignore').decode('ASCII')
-    # Then keep only alphanumeric characters and some special chars
-    return "".join([c for c in title if c.isalnum() or c in ' .-_']).strip()
+    
+    if platform == 'tiktok':
+        # For TikTok: Remove hashtags and limit title length
+        title = re.sub(r'#\w+', '', title)  # Remove hashtags
+        title = re.sub(r'\s+', ' ', title)  # Remove extra spaces
+        title = title.split(' - ')[0]       # Remove author part if present
+        title = title[:50]                  # Limit length to 50 chars
+    
+    # Keep only alphanumeric characters and some special chars
+    title = "".join([c for c in title if c.isalnum() or c in ' .-_']).strip()
+    return title or 'video'  # Fallback to 'video' if empty
 
 class ProgressCallback:
     def __init__(self):
@@ -82,6 +92,19 @@ class ProgressCallback:
                 "status": "Обробка завершена"
             }) + "\n"
 
+# Update FFmpeg options for video conversion
+FFMPEG_VIDEO_OPTIONS = {
+    'key': 'FFmpegVideoConvertor',
+    'preferedformat': 'mp4'
+}
+
+# Update video format options - force H.264 only
+VIDEO_FORMAT_OPTS = {
+    'youtube': 'bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/best[vcodec^=avc1][ext=mp4]/best[ext=mp4]',
+    'instagram': 'best[vcodec^=avc1][ext=mp4]/best[ext=mp4]',
+    'tiktok': 'best[vcodec^=avc1][ext=mp4]/best[ext=mp4]'
+}
+
 def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
     output_folder = os.path.join(TEMP_FOLDER, download_id)
     os.makedirs(output_folder, exist_ok=True)
@@ -93,18 +116,31 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
         'Accept-Language': 'en-US,en;q=0.5',
     }
 
+    # Determine platform
+    platform = None
+    if 'tiktok.com' in url:
+        platform = 'tiktok'
+    
     base_opts = {
-        'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
-        'quiet': False,
-        'no_warnings': False,
-        'extract_flat': False,
+        'format_sort': [
+            'vcodec:h264',  # Prefer H.264 video codec
+            'ext:mp4',      # Prefer MP4 container
+            'acodec:aac',   # Prefer AAC audio codec
+            'quality'       # Then sort by quality
+        ],
+        'merge_output_format': 'mp4',
+        'outtmpl': os.path.join(
+            output_folder, 
+            '%(title)s.%(ext)s' if platform != 'tiktok' else 'tiktok_video_%(id)s.%(ext)s'
+        ),
+        'postprocessors': [FFMPEG_VIDEO_OPTIONS],
+        'format': VIDEO_FORMAT_OPTS['youtube'],  # Default to YouTube format
         'http_headers': common_headers,
     }
 
     # For MP3 conversion, always download best quality first then convert
     if format == 'mp3':
         base_opts.update({
-            'format': 'best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
@@ -112,11 +148,12 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             }],
         })
 
+    # Platform-specific formats
     if 'instagram.com' in url:
         url = url.split('?')[0]
         url = url.replace('/reels/', '/reel/')
         base_opts.update({
-            'format': 'best' if format == 'mp3' else 'best[ext=mp4]',
+            'format': VIDEO_FORMAT_OPTS['instagram'],
             'extract_flat': False,
             'add_header': [
                 ('User-Agent', 'Instagram 219.0.0.12.117 Android'),
@@ -125,7 +162,7 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
         })
     elif 'tiktok.com' in url:
         base_opts.update({
-            'format': 'best' if format == 'mp3' else '(mp4)[width>=0]',
+            'format': VIDEO_FORMAT_OPTS['tiktok'],
             'nocheckcertificate': True,
         })
     else:  # YouTube

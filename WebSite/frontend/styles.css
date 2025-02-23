@@ -44,21 +44,23 @@ body {
     gap: 2rem;  /* Add gap between main elements */
 }
 
+/* Update switch group positioning */
 .switch-group {
-    position: fixed;
-    top: 1rem;
+    position: static;  /* Changed from fixed */
     display: flex;
-    flex-direction: column;
     gap: 1rem;
     z-index: 1000;
+    margin: 1rem;     /* Add margin instead of absolute positioning */
 }
 
 .switch-group.left {
-    left: 1rem;
+    float: left;      /* Use float instead of fixed positioning */
+    left: auto;       /* Remove fixed positioning */
 }
 
 .switch-group.right {
-    right: 1rem;
+    float: right;     /* Use float instead of fixed positioning */
+    right: auto;      /* Remove fixed positioning */
 }
 
 /* Remove the device switch from the right group */
@@ -165,9 +167,7 @@ body {
 }
 
 .theme-switch {
-    position: fixed;  /* Changed from absolute to fixed */
-    top: 1rem;
-    left: 1rem;     /* Changed from right to left */
+    position: static;  /* Changed from fixed */
     display: flex;
     align-items: center;
     gap: 0.5rem;    /* Add gap between switch and emojis */
@@ -181,9 +181,7 @@ body {
 }
 
 .lang-switch {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
+    position: static;  /* Changed from fixed */
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -830,3 +828,5 @@ button:active::after {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
+
+
