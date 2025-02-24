@@ -309,7 +309,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 def main() -> None:
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "7507497236:AAFLn5QaKCVAl0pF1Cuu6e6FnzMoE3e3lDw")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_TOKEN_HERE")
     application = Application.builder().token(token).build()
     
     # Add a separate handler for the main menu button that takes precedence over others
