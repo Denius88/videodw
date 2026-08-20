@@ -26,12 +26,12 @@ The project demonstrates advanced backend capabilities, including real-time prog
 *   **Backend Framework:** FastAPI, Python `asyncio`
 *   **Bot Framework:** python-telegram-bot
 *   **Media Processing:** yt-dlp, FFmpeg-python
-*   **Frontend:** HTML5, CSS3 (Custom properties/variables), Vanilla JavaScript
+*   **Frontend:** HTML5, CSS3, Vanilla JavaScript
 *   **API Architecture:** RESTful endpoints, Server-Sent Events (SSE) for real-time progress updates.
 
 ## 🏗️ Project Structure
 
-
+```text
 videodw/
 ├── Telegram Bot/
 │   ├── bot.py             # Main asynchronous Telegram bot logic
@@ -43,41 +43,52 @@ videodw/
 │   └── styles.css         # Responsive UI styling
 ├── requirements.txt       # Python dependencies
 └── README.md
+```
 
-🚀 Getting Started
-Prerequisites
-Python 3.9 or higher
-FFmpeg installed and added to your system's PATH.
+## 🚀 Getting Started
 
-Installation
+### Prerequisites
+*   Python 3.9 or higher
+*   **FFmpeg** installed and added to your system's PATH.
 
-Clone the repository:
-#git clone [https://github.com/YourUsername/videodw.git](https://github.com/YourUsername/videodw.git)
-#cd videodw
+### Installation
 
-Install dependencies:
-#pip install -r requirements.txt
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Denius88/videodw.git](https://github.com/Denius88/videodw.git)
+   cd videodw
+   ```
 
-Environment Setup:
-Create an environment variable for the Telegram Bot token:
-export TELEGRAM_BOT_TOKEN="your_bot_token_here"
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Running the Services
-#To run the Web Service (FastAPI):
+3. **Environment Setup:**
+   Create an environment variable for the Telegram Bot token:
+   ```bash
+   export TELEGRAM_BOT_TOKEN="your_bot_token_here"
+   ```
+
+### Running the Services
+
+**To run the Web Service (FastAPI):**
+```bash
 cd WebSite
 uvicorn app:app --host 0.0.0.0 --port 8000
+```
+*The web interface will be available at `http://localhost:8000`. Keep `index.html` running in your browser to interact with the API.*
 
-The web interface will be available at http://localhost:8000. Keep index.html running in your browser.
-
-To run the Telegram Bot:
-
+**To run the Telegram Bot:**
+```bash
 cd "Telegram Bot"
 python bot.py
+```
 
-🎯 Architecture Highlights for Developers
-Real-time Progress: The FastAPI backend utilizes generator functions and StreamingResponse to push JSON progress chunks to the frontend.
-Error Handling: Implements comprehensive try/except/finally blocks ensuring that failed downloads still trigger directory cleanup, preventing memory leaks.
-Format Selection Logic: Employs advanced yt-dlp format sorting (preferring h264, mp4, and aac) to ensure maximum compatibility across iOS, Android, and desktop devices.
+## 🎯 Architecture Highlights for Developers
+*   **Real-time Progress:** The FastAPI backend utilizes generator functions and `StreamingResponse` to push JSON progress chunks to the frontend.
+*   **Error Handling:** Implements comprehensive `try/except/finally` blocks ensuring that failed downloads still trigger directory cleanup, preventing memory leaks.
+*   **Format Selection Logic:** Employs advanced `yt-dlp` format sorting (preferring `h264`, `mp4`, and `aac`) to ensure maximum compatibility across iOS, Android, and desktop devices.
 
-⚠️ Disclaimer
+## ⚠️ Disclaimer
 This project is built for educational and portfolio demonstration purposes. Users are responsible for adhering to the terms of service of the respective media platforms and respecting copyright laws.
