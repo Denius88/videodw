@@ -1,23 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Set initial theme based on user's preference
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     document.getElementById('theme-toggle').checked = savedTheme === 'dark';
 
-    // Theme toggle handler
     document.getElementById('theme-toggle').addEventListener('change', (e) => {
         const theme = e.target.checked ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     });
 
-    // Language handling
     const savedLang = localStorage.getItem('lang') || 'uk';
     document.documentElement.setAttribute('data-lang', savedLang);
     document.getElementById('lang-toggle').checked = savedLang === 'en';
     updatePageLanguage(savedLang);
 
-    // Language toggle handler
     document.getElementById('lang-toggle').addEventListener('change', (e) => {
         const lang = e.target.checked ? 'en' : 'uk';
         document.documentElement.setAttribute('data-lang', lang);
@@ -25,16 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePageLanguage(lang);
     });
 
-    // Device switch handling
     const deviceToggle = document.getElementById('device-toggle');
     const savedDevice = localStorage.getItem('device') || 'pc';
     const showcaseGrid = document.querySelector('.showcase-grid');
     
-    // Set initial device state
     deviceToggle.checked = savedDevice === 'mobile';
     updateVideoSources(savedDevice);
 
-    // Device toggle handler
     deviceToggle.addEventListener('change', (e) => {
         const device = e.target.checked ? 'mobile' : 'pc';
         localStorage.setItem('device', device);
@@ -44,14 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const API_URL = 'http://localhost:8000/api';
 
-// URL validation patterns from bot
 const URL_PATTERNS = {
     youtube: /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/,
     instagram: /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|share)\/[\w-]+\/?/,
     tiktok: /https?:\/\/(?:www\.|vm\.)?tiktok\.com\//
 };
 
-// Add translations
 const translations = {
     uk: {
         title: 'Відео Завантажувач',
@@ -84,10 +75,8 @@ const translations = {
 function updatePageLanguage(lang) {
     const t = translations[lang];
     
-    // Update document title
     document.title = t.title;
     
-    // Update all text content
     document.querySelector('h1').textContent = t.title;
     document.querySelector('.telegram-banner').innerHTML = 
         `${t.telegramText} <a href="https://t.me/zcollage_bot" target="_blank">${t.telegramBot}</a> 🤖`;
@@ -96,10 +85,8 @@ function updatePageLanguage(lang) {
     document.querySelector('select option[value="mp3"]').textContent = t.audioOption + ' 🔈';
     document.querySelector('#downloadBtn').textContent = t.downloadButton;
 
-    // Update any existing status messages
     const statusDiv = document.getElementById('status');
     if (statusDiv.textContent) {
-        // Replace known status messages
         Object.entries(translations.uk).forEach(([key, value]) => {
             if (statusDiv.textContent.includes(value)) {
                 statusDiv.textContent = statusDiv.textContent.replace(
@@ -110,7 +97,6 @@ function updatePageLanguage(lang) {
         });
     }
 
-    // Also update video sources when language changes
     const device = localStorage.getItem('device') || 'pc';
     updateVideoSources(device);
 }
@@ -126,7 +112,6 @@ async function startDownload() {
     const t = translations[lang];
 
     try {
-        // Validate URL
         const url = urlInput.value.trim();
         let isValidUrl = false;
         let platform = '';
@@ -146,14 +131,12 @@ async function startDownload() {
             throw new Error('Невірне посилання. Підтримуються тільки YouTube, Instagram та TikTok');
         }
 
-        // Reset UI
-        statusDiv.className = 'status info';  // Changed to info style
+        statusDiv.className = 'status info';  
         downloadBtn.disabled = true;
         progressBar.style.display = 'block';
         progressFill.style.width = '0%';
         statusDiv.textContent = t.preparing;
 
-        // Make API request and handle response as a stream of events
         const response = await fetch(`${API_URL}/download`, {
             method: 'POST',
             headers: {
@@ -186,13 +169,11 @@ async function startDownload() {
                         statusDiv.textContent = `${data.status} (${data.progress}%)`;
                     }
                     if (data.download_id) {
-                        // Start file download
                         const downloadUrl = `${API_URL}/download/${data.download_id}`;
                         const downloadResponse = await fetch(downloadUrl);
                         if (!downloadResponse.ok) throw new Error('Download failed');
                         const blob = await downloadResponse.blob();
 
-                        // Create download link
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -202,7 +183,6 @@ async function startDownload() {
                         window.URL.revokeObjectURL(url);
                         a.remove();
 
-                        // Show success and clear input
                         statusDiv.textContent = t.completed;
                         statusDiv.className = 'status success';
                         urlInput.classList.add('unhook-animation');
@@ -242,25 +222,21 @@ function updateVideoSources(device) {
         const currentTime = video.currentTime;
         const wasPlaying = !video.paused;
         
-        // Get the correct source based on device and language
         let source = `addition/${video.closest('.platform-showcase').className.split(' ')[1]} ${device} ${videoLang}.MP4`;
         video.querySelector('source').setAttribute('src', source);
         
-        // Reload and restore state
         video.load();
         video.currentTime = currentTime;
         if (wasPlaying) video.play();
     });
 }
 
-// Keyboard shortcuts
 document.addEventListener('keypress', function(e) {
     if (e.key === 'Enter' && !document.getElementById('downloadBtn').disabled) {
         startDownload();
     }
 });
 
-// Add input animation on paste
 document.getElementById('url').addEventListener('paste', function(e) {
     this.classList.remove('unhook-animation', 'fade-out');
 });
