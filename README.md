@@ -43,38 +43,41 @@ videodw/
 │   └── styles.css         # Responsive UI styling
 ├── requirements.txt       # Python dependencies
 └── README.md
+
 🚀 Getting Started
 Prerequisites
 Python 3.9 or higher
 FFmpeg installed and added to your system's PATH.
+
 Installation
+
 Clone the repository:
-Bash
-git clone [https://github.com/YourUsername/videodw.git](https://github.com/YourUsername/videodw.git)
-cd videodw
+#git clone [https://github.com/YourUsername/videodw.git](https://github.com/YourUsername/videodw.git)
+#cd videodw
+
 Install dependencies:
-Bash
-pip install -r requirements.txt
+#pip install -r requirements.txt
+
 Environment Setup:
 Create an environment variable for the Telegram Bot token:
-Bash
 export TELEGRAM_BOT_TOKEN="your_bot_token_here"
-Running the Services
-To run the Web Service (FastAPI):
 
-Bash
+Running the Services
+#To run the Web Service (FastAPI):
 cd WebSite
 uvicorn app:app --host 0.0.0.0 --port 8000
+
 The web interface will be available at http://localhost:8000. Keep index.html running in your browser.
 
 To run the Telegram Bot:
 
-Bash
 cd "Telegram Bot"
 python bot.py
+
 🎯 Architecture Highlights for Developers
 Real-time Progress: The FastAPI backend utilizes generator functions and StreamingResponse to push JSON progress chunks to the frontend.
 Error Handling: Implements comprehensive try/except/finally blocks ensuring that failed downloads still trigger directory cleanup, preventing memory leaks.
 Format Selection Logic: Employs advanced yt-dlp format sorting (preferring h264, mp4, and aac) to ensure maximum compatibility across iOS, Android, and desktop devices.
+
 ⚠️ Disclaimer
 This project is built for educational and portfolio demonstration purposes. Users are responsible for adhering to the terms of service of the respective media platforms and respecting copyright laws.
