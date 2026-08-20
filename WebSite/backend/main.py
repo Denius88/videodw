@@ -14,13 +14,11 @@ import re
 import urllib.parse
 import json
 
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,12 +27,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get the absolute path of the backend directory
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_FOLDER = os.path.join(BACKEND_DIR, "downloads")
 os.makedirs(TEMP_FOLDER, exist_ok=True)
 
-# Add URL validation patterns
 URL_PATTERNS = {
     'youtube': re.compile(r'^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+'),
     'instagram': re.compile(r'https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|share)\/[\w-]+\/?'),
@@ -55,20 +51,18 @@ class DownloadRequest(BaseModel):
 
 def sanitize_filename(title: str, platform: str = None) -> str:
     """Sanitize filename based on platform and remove unnecessary text"""
-    # First, replace any non-ASCII characters
     import unicodedata
     title = unicodedata.normalize('NFKD', title).encode('ASCII', 'ignore').decode('ASCII')
     
     if platform == 'tiktok':
-        # For TikTok: Remove hashtags and limit title length
-        title = re.sub(r'#\w+', '', title)  # Remove hashtags
-        title = re.sub(r'\s+', ' ', title)  # Remove extra spaces
-        title = title.split(' - ')[0]       # Remove author part if present
-        title = title[:50]                  # Limit length to 50 chars
+        title = re.sub(r'#\w+', '', title)  
+        title = re.sub(r'\s+', ' ', title)  
+        title = title.split(' - ')[0]       
+        title = title[:50]                  
     
-    # Keep only alphanumeric characters and some special chars
+
     title = "".join([c for c in title if c.isalnum() or c in ' .-_']).strip()
-    return title or 'video'  # Fallback to 'video' if empty
+    return title or 'video' 
 
 class ProgressCallback:
     def __init__(self):
@@ -92,13 +86,11 @@ class ProgressCallback:
                 "status": "Обробка завершена"
             }) + "\n"
 
-# Update FFmpeg options for video conversion
 FFMPEG_VIDEO_OPTIONS = {
     'key': 'FFmpegVideoConvertor',
     'preferedformat': 'mp4'
 }
 
-# Update video format options - force H.264 only
 VIDEO_FORMAT_OPTS = {
     'youtube': 'bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/best[vcodec^=avc1][ext=mp4]/best[ext=mp4]',
     'instagram': 'best[vcodec^=avc1][ext=mp4]/best[ext=mp4]',
@@ -109,24 +101,22 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
     output_folder = os.path.join(TEMP_FOLDER, download_id)
     os.makedirs(output_folder, exist_ok=True)
 
-    # Common headers and options
     common_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
     }
 
-    # Determine platform
     platform = None
     if 'tiktok.com' in url:
         platform = 'tiktok'
     
     base_opts = {
         'format_sort': [
-            'vcodec:h264',  # Prefer H.264 video codec
-            'ext:mp4',      # Prefer MP4 container
-            'acodec:aac',   # Prefer AAC audio codec
-            'quality'       # Then sort by quality
+            'vcodec:h264',  
+            'ext:mp4',     
+            'acodec:aac',   
+            'quality'       
         ],
         'merge_output_format': 'mp4',
         'outtmpl': os.path.join(
@@ -134,11 +124,10 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             '%(title)s.%(ext)s' if platform != 'tiktok' else 'tiktok_video_%(id)s.%(ext)s'
         ),
         'postprocessors': [FFMPEG_VIDEO_OPTIONS],
-        'format': VIDEO_FORMAT_OPTS['youtube'],  # Default to YouTube format
+        'format': VIDEO_FORMAT_OPTS['youtube'],  
         'http_headers': common_headers,
     }
 
-    # For MP3 conversion, always download best quality first then convert
     if format == 'mp3':
         base_opts.update({
             'postprocessors': [{
@@ -148,7 +137,6 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             }],
         })
 
-    # Platform-specific formats
     if 'instagram.com' in url:
         url = url.split('?')[0]
         url = url.replace('/reels/', '/reel/')
@@ -165,7 +153,7 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             'format': VIDEO_FORMAT_OPTS['tiktok'],
             'nocheckcertificate': True,
         })
-    else:  # YouTube
+    else:  
         if format == 'mp3':
             base_opts.update({
                 'format': 'bestaudio/best',
@@ -196,19 +184,15 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
                 "status": "Фінальна обробка"
             }))
 
-            # Find downloaded file
             import glob
             pattern = '*.mp3' if format == 'mp3' else '*.mp4'
             files = glob.glob(os.path.join(output_folder, pattern))
             
             if not files and format == 'mp3':
-                # If MP3 not found, look for any audio file
                 files = glob.glob(os.path.join(output_folder, '*.[mM][pP]3'))
                 if not files:
-                    # Look for the downloaded video file that should be converted
                     video_files = glob.glob(os.path.join(output_folder, '*.[mM][pP]4'))
                     if (video_files):
-                        # Convert video to mp3 manually if needed
                         video_path = video_files[0]
                         audio_path = os.path.splitext(video_path)[0] + '.mp3'
                         os.system(f'ffmpeg -i "{video_path}" -q:a 0 -map a "{audio_path}" -y')
@@ -226,7 +210,6 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             return filename, filepath
 
     except Exception as e:
-        # Cleanup on error
         shutil.rmtree(output_folder, ignore_errors=True)
         logger.error(f"Download error: {str(e)}")
         raise Exception(f"Помилка завантаження: {str(e)}")
@@ -265,7 +248,6 @@ async def create_download(request: DownloadRequest):
 @app.get("/api/download/{download_id}")
 async def get_file(download_id: str, background_tasks: BackgroundTasks):
     try:
-        # Ensure the download_id is valid UUID
         try:
             uuid.UUID(download_id)
         except ValueError:
@@ -275,7 +257,6 @@ async def get_file(download_id: str, background_tasks: BackgroundTasks):
         if not os.path.exists(download_dir):
             raise HTTPException(status_code=404, detail="File not found")
             
-        # Get the first file in the directory
         files = os.listdir(download_dir)
         if not files:
             raise HTTPException(status_code=404, detail="No files found")
@@ -286,20 +267,18 @@ async def get_file(download_id: str, background_tasks: BackgroundTasks):
         if not os.path.exists(filepath):
             raise HTTPException(status_code=404, detail="File not found")
 
-        # Check if file is empty
         if os.path.getsize(filepath) == 0:
             raise HTTPException(status_code=400, detail="File is empty")
 
         async def cleanup_folder(path: str):
             try:
-                await asyncio.sleep(5)  # Wait a bit before cleanup
+                await asyncio.sleep(5)  
                 if os.path.exists(path):
                     shutil.rmtree(path)
                     logger.info(f"Cleaned up folder: {path}")
             except Exception as e:
                 logger.error(f"Cleanup error: {str(e)}")
 
-        # Encode the filename for HTTP header
         encoded_filename = urllib.parse.quote(filename)
         
         headers = {
@@ -307,7 +286,6 @@ async def get_file(download_id: str, background_tasks: BackgroundTasks):
             'Access-Control-Expose-Headers': 'Content-Disposition'
         }
 
-        # Add cleanup task to background tasks
         background_tasks.add_task(cleanup_folder, download_dir)
 
         return FileResponse(
@@ -318,13 +296,11 @@ async def get_file(download_id: str, background_tasks: BackgroundTasks):
         )
 
     except Exception as e:
-        # Cleanup on error
         if os.path.exists(download_dir):
             shutil.rmtree(download_dir)
         logger.error(f"Error serving file: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# Add cleanup endpoint for failed downloads
 @app.delete("/api/cleanup/{download_id}")
 async def cleanup_download(download_id: str):
     try:
