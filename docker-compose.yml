@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: .
+    restart: unless-stopped
+    command: uvicorn WebSite.backend.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - backend_downloads:/app/WebSite/backend/downloads
+
+  bot:
+    build: .
+    restart: unless-stopped
+    command: ["python", "TelegramBot/bot_main.py"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - bot_downloads:/app/TelegramBot/temp_downloads
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./WebSite/frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  backend_downloads:
+  bot_downloads:

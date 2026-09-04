@@ -1,0 +1,14 @@
+# Web API
+fastapi
+uvicorn[standard]
+pydantic
+
+# Telegram bot
+python-telegram-bot
+
+# Media downloading and processing
+yt-dlp
+ffmpeg-python
+
+# HTTP client
+requests

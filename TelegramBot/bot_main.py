@@ -23,6 +23,27 @@ TEMP_FOLDER = "temp_downloads"
 os.makedirs(TEMP_FOLDER, exist_ok=True)
 
 active_downloads = {}
+MAX_VIDEO_SIZE_BYTES = 200 * 1024 * 1024
+VIDEO_SEND_TIMEOUT_SECONDS = 5 * 60
+
+
+class VideoTooLargeError(Exception):
+    pass
+
+
+def validate_video_size(info):
+    formats = info.get('requested_formats') or [info]
+    known_size = sum(
+        item.get('filesize') or item.get('filesize_approx') or 0
+        for item in formats
+    )
+    if known_size > MAX_VIDEO_SIZE_BYTES:
+        raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+
+
+def stop_oversized_download(status):
+    if status.get('status') == 'downloading' and status.get('downloaded_bytes', 0) > MAX_VIDEO_SIZE_BYTES:
+        raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
 
 def cleanup_temp_files(user_id):
     user_folder = os.path.join(TEMP_FOLDER, str(user_id))
@@ -86,6 +107,8 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
         ydl_opts = {
             'format': '(mp4)[width>=0][height>=0]',  
             'outtmpl': os.path.join(output_folder, 'instagram_video.%(ext)s'),
+            'max_filesize': MAX_VIDEO_SIZE_BYTES,
+            'progress_hooks': [stop_oversized_download],
             'quiet': False,
             'no_warnings': False,
             'merge_output_format': 'mp4', 
@@ -107,11 +130,15 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                validate_video_size(ydl.extract_info(instagram_link, download=False))
                 ydl.download([instagram_link])
+        except VideoTooLargeError:
+            raise
         except Exception as e:
             logger.error(f"First attempt failed: {str(e)}")
             ydl_opts['format'] = 'best[ext=mp4]/best'
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                validate_video_size(ydl.extract_info(instagram_link, download=False))
                 ydl.download([instagram_link])
 
         if not os.path.exists(video_path):
@@ -124,15 +151,20 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
         file_size = os.path.getsize(video_path) / (1024 * 1024)
         if file_size == 0:
             raise Exception("Завантажений файл порожній")
+        if os.path.getsize(video_path) > MAX_VIDEO_SIZE_BYTES:
+            raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
 
         await message.edit_text("Надсилання відео в чат...")
         
         with open(video_path, 'rb') as video_file:
-            await context.bot.send_video(
-                chat_id=chat_id,
-                video=video_file,
-                caption="Ось ваше відео з Instagram!",
-                supports_streaming=True
+            await asyncio.wait_for(
+                context.bot.send_video(
+                    chat_id=chat_id,
+                    video=video_file,
+                    caption="Ось ваше відео з Instagram!",
+                    supports_streaming=True
+                ),
+                timeout=VIDEO_SEND_TIMEOUT_SECONDS
             )
 
         keyboard = [
@@ -147,6 +179,10 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
             reply_markup=reply_markup
         )
 
+    except asyncio.TimeoutError:
+        error_message = "Помилка: не вдалося надіслати відео протягом 5 хвилин. Файл видалено."
+        logger.error(error_message)
+        await context.bot.send_message(chat_id=chat_id, text=error_message)
     except Exception as e:
         error_message = f"Помилка: {str(e)}"
         logger.error(error_message)
@@ -178,6 +214,8 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
         ydl_opts = {
             'format': 'best',
             'outtmpl': os.path.join(output_folder, 'tiktok_video.%(ext)s'),
+            'max_filesize': MAX_VIDEO_SIZE_BYTES,
+            'progress_hooks': [stop_oversized_download],
             'quiet': False,
             'no_warnings': False,
             'extract_flat': False,
@@ -195,6 +233,7 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
             info = ydl.extract_info(tiktok_link, download=False)
             if info.get('duration', 0) == 0:
                 raise Exception("Це фото або GIF. Бот підтримує лише відео з TikTok.")
+            validate_video_size(info)
             
             ydl.download([tiktok_link])
 
@@ -205,14 +244,20 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
             else:
                 raise Exception("Не вдалося знайти завантажене відео")
 
+        if os.path.getsize(video_path) > MAX_VIDEO_SIZE_BYTES:
+            raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+
         await message.edit_text("Надсилання відео в чат...")
         
         with open(video_path, 'rb') as video_file:
-            await context.bot.send_video(
-                chat_id=chat_id,
-                video=video_file,
-                caption="Ось ваше відео з TikTok!",
-                supports_streaming=True
+            await asyncio.wait_for(
+                context.bot.send_video(
+                    chat_id=chat_id,
+                    video=video_file,
+                    caption="Ось ваше відео з TikTok!",
+                    supports_streaming=True
+                ),
+                timeout=VIDEO_SEND_TIMEOUT_SECONDS
             )
 
         keyboard = [
@@ -227,6 +272,10 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=reply_markup
         )
 
+    except asyncio.TimeoutError:
+        error_message = "Помилка: не вдалося надіслати відео протягом 5 хвилин. Файл видалено."
+        logger.error(error_message)
+        await context.bot.send_message(chat_id=chat_id, text=error_message)
     except Exception as e:
         error_message = f"Помилка: {str(e)}"
         logger.error(error_message)

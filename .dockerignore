@@ -1,0 +1,6 @@
+.git
+.venv
+__pycache__
+*.pyc
+TelegramBot/temp_downloads
+WebSite/backend/downloads

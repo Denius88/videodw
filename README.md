@@ -33,7 +33,7 @@ The project demonstrates advanced backend capabilities, including real-time prog
 
 ```text
 videodw/
-├── Telegram Bot/
+├── TelegramBot/
 │   ├── bot.py             # Main asynchronous Telegram bot logic
 │   └── temp_downloads/    # Temporary storage (auto-cleaned)
 ├── WebSite/
@@ -81,9 +81,32 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 
 **To run the Telegram Bot:**
 ```bash
-cd "Telegram Bot"
+cd TelegramBot
 python bot.py
 ```
+
+### VPS Deployment with Docker and Nginx
+
+Install Docker and Docker Compose on the VPS, then run:
+
+```bash
+git clone https://github.com/Denius88/videodw.git
+cd videodw
+cp .env.example .env
+nano .env
+docker compose up -d --build
+```
+
+Set `TELEGRAM_BOT_TOKEN` in `.env` before starting the stack. The web interface will be available at `http://YOUR_VPS_IP`, while Nginx proxies `/api` to the FastAPI backend. Useful commands:
+
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f bot
+docker compose down
+```
+
+Open TCP ports 80 and 443 in the VPS firewall. HTTPS can be added later with a domain and Let's Encrypt.
 
 ## 🎯 Architecture Highlights for Developers
 *   **Real-time Progress:** The FastAPI backend utilizes generator functions and `StreamingResponse` to push JSON progress chunks to the frontend.

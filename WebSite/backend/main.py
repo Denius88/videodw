@@ -30,6 +30,7 @@ app.add_middleware(
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_FOLDER = os.path.join(BACKEND_DIR, "downloads")
 os.makedirs(TEMP_FOLDER, exist_ok=True)
+MAX_VIDEO_SIZE_BYTES = 200 * 1024 * 1024
 
 URL_PATTERNS = {
     'youtube': re.compile(r'^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+'),
@@ -72,6 +73,8 @@ class ProgressCallback:
 
     def __call__(self, d):
         if d['status'] == 'downloading':
+            if d.get('downloaded_bytes', 0) > MAX_VIDEO_SIZE_BYTES:
+                raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
             self.total = d.get('total_bytes', 0) or d.get('total_bytes_estimate', 0)
             self.current = d.get('downloaded_bytes', 0)
             if self.total:
@@ -86,10 +89,31 @@ class ProgressCallback:
                 "status": "Обробка завершена"
             }) + "\n"
 
+
+async def cleanup_download_folder_after_delay(path: str, delay: int = 300):
+    await asyncio.sleep(delay)
+    if os.path.exists(path):
+        shutil.rmtree(path, ignore_errors=True)
+        logger.info(f"Cleaned up expired download folder: {path}")
+
 FFMPEG_VIDEO_OPTIONS = {
     'key': 'FFmpegVideoConvertor',
     'preferedformat': 'mp4'
 }
+
+
+class VideoTooLargeError(Exception):
+    pass
+
+
+def validate_video_size(info):
+    formats = info.get('requested_formats') or [info]
+    known_size = sum(
+        item.get('filesize') or item.get('filesize_approx') or 0
+        for item in formats
+    )
+    if known_size > MAX_VIDEO_SIZE_BYTES:
+        raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
 
 VIDEO_FORMAT_OPTS = {
     'youtube': 'bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/best[vcodec^=avc1][ext=mp4]/best[ext=mp4]',
@@ -126,6 +150,7 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
         'postprocessors': [FFMPEG_VIDEO_OPTIONS],
         'format': VIDEO_FORMAT_OPTS['youtube'],  
         'http_headers': common_headers,
+        'max_filesize': MAX_VIDEO_SIZE_BYTES,
     }
 
     if format == 'mp3':
@@ -177,7 +202,10 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
                 "status": "Початок завантаження"
             }))
             
-            info = ydl.extract_info(url, download=True)
+            info = ydl.extract_info(url, download=False)
+            if format != 'mp3':
+                validate_video_size(info)
+            ydl.download([url])
             
             print(json.dumps({
                 "progress": 95,
@@ -206,6 +234,8 @@ def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
             
             if os.path.getsize(filepath) == 0:
                 raise Exception("Downloaded file is empty")
+            if format != 'mp3' and os.path.getsize(filepath) > MAX_VIDEO_SIZE_BYTES:
+                raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
 
             return filename, filepath
 
@@ -222,6 +252,11 @@ async def create_download(request: DownloadRequest):
         async def download_generator():
             try:
                 filename, filepath = download_media(request.url, request.format, download_id)
+                asyncio.create_task(
+                    cleanup_download_folder_after_delay(
+                        os.path.join(TEMP_FOLDER, download_id)
+                    )
+                )
                 yield json.dumps({
                     "success": True,
                     "download_id": download_id,

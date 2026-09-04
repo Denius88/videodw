@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 const URL_PATTERNS = {
     youtube: /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/,
