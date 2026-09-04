@@ -30,6 +30,26 @@ The project demonstrates advanced backend capabilities, including real-time prog
 *   **Proxy and Deployment:** Nginx, Docker, Docker Compose
 *   **API:** REST endpoints with streamed JSON progress updates
 
+## 🖼️ Screenshots
+
+### Web Interface
+
+<p align="center">
+   <img src="docs/screenshots/start.png" alt="VideoDW web interface start screen" width="720">
+</p>
+
+<p align="center">
+   <img src="docs/screenshots/process.png" alt="VideoDW web interface processing a download" width="720">
+   <img src="docs/screenshots/downloaded.png" alt="VideoDW web interface completed download" width="720">
+</p>
+
+### Telegram Bot
+
+<p align="center">
+   <img src="docs/screenshots/videodw_startmenu.jpg" alt="VideoDW Telegram bot start menu" width="360">
+   <img src="docs/screenshots/videodw_tiktok.jpg" alt="VideoDW Telegram bot returning a TikTok video" width="360">
+</p>
+
 ## 🏗️ Project Structure
 
 ```text
