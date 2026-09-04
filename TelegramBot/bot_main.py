@@ -38,24 +38,24 @@ def validate_video_size(info):
         for item in formats
     )
     if known_size > MAX_VIDEO_SIZE_BYTES:
-        raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+        raise VideoTooLargeError("The video is larger than 200 MB. Download cancelled.")
 
 
 def stop_oversized_download(status):
     if status.get('status') == 'downloading' and status.get('downloaded_bytes', 0) > MAX_VIDEO_SIZE_BYTES:
-        raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+        raise VideoTooLargeError("The video is larger than 200 MB. Download cancelled.")
 
 def cleanup_temp_files(user_id):
     user_folder = os.path.join(TEMP_FOLDER, str(user_id))
     if os.path.exists(user_folder):
         try:
             shutil.rmtree(user_folder)
-            logger.info(f"Очищено тимчасові файли користувача {user_id}")
+            logger.info(f"Cleaned up temporary files for user {user_id}")
         except Exception as e:
-            logger.error(f"Помилка очищення тимчасових файлів: {str(e)}")
+            logger.error(f"Temporary file cleanup error: {str(e)}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    start_keyboard = [[KeyboardButton("🔄 Головне меню")]] 
+    start_keyboard = [[KeyboardButton("🔄 Main Menu")]]
     start_markup = ReplyKeyboardMarkup(
         start_keyboard,
         resize_keyboard=True,
@@ -69,11 +69,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     inline_markup = InlineKeyboardMarkup(inline_keyboard)
 
     await update.message.reply_text(
-        "Привіт! Я допоможу вам завантажити відео з Instagram та TikTok.",
+        "Hello! I can help you download videos from Instagram and TikTok.",
         reply_markup=start_markup
     )
     await update.message.reply_text(
-        "Оберіть платформу для завантаження:",
+        "Choose a platform to download from:",
         reply_markup=inline_markup
     )
     return ConversationHandler.END
@@ -81,23 +81,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def instagram_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(text="Будь ласка, надішліть посилання на відео з Instagram:")
+    await query.edit_message_text(text="Please send an Instagram video link:")
     return WAITING_FOR_INSTAGRAM_LINK
 
 async def tiktok_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(text="Будь ласка, надішліть посилання на TikTok відео:")
+    await query.edit_message_text(text="Please send a TikTok video link:")
     return WAITING_FOR_TIKTOK_LINK
     
 async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     instagram_link = update.message.text.strip()
     
     if not re.match(r'https?://(?:www\.)?instagram\.com/(?:p|reel|share)/[\w-]+/?', instagram_link):
-        await update.message.reply_text("Це не схоже на коректне посилання Instagram. Спробуйте ще раз.")
+        await update.message.reply_text("This does not look like a valid Instagram link. Please try again.")
         return WAITING_FOR_INSTAGRAM_LINK
 
-    message = await update.message.reply_text("Завантаження розпочато... Будь ласка, зачекайте.")
+    message = await update.message.reply_text("Download started... Please wait.")
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     output_folder = os.path.join(TEMP_FOLDER, str(user_id))
@@ -126,7 +126,7 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
         }
 
         video_path = os.path.join(output_folder, 'instagram_video.mp4')
-        await message.edit_text("Завантаження відео...")
+        await message.edit_text("Downloading video...")
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -146,22 +146,22 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
             if mp4_files:
                 video_path = os.path.join(output_folder, mp4_files[0])
             else:
-                raise Exception("Не вдалося знайти завантажене відео")
+                raise Exception("Could not find the downloaded video")
 
         file_size = os.path.getsize(video_path) / (1024 * 1024)
         if file_size == 0:
-            raise Exception("Завантажений файл порожній")
+            raise Exception("The downloaded file is empty")
         if os.path.getsize(video_path) > MAX_VIDEO_SIZE_BYTES:
-            raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+            raise VideoTooLargeError("The video is larger than 200 MB. Download cancelled.")
 
-        await message.edit_text("Надсилання відео в чат...")
+        await message.edit_text("Sending video to the chat...")
         
         with open(video_path, 'rb') as video_file:
             await asyncio.wait_for(
                 context.bot.send_video(
                     chat_id=chat_id,
                     video=video_file,
-                    caption="Ось ваше відео з Instagram!",
+                    caption="Here is your Instagram video!",
                     supports_streaming=True
                 ),
                 timeout=VIDEO_SEND_TIMEOUT_SECONDS
@@ -175,16 +175,16 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
         
         await context.bot.send_message(
             chat_id=chat_id,
-            text="Готово! Що бажаєте зробити далі?",
+            text="Done! What would you like to do next?",
             reply_markup=reply_markup
         )
 
     except asyncio.TimeoutError:
-        error_message = "Помилка: не вдалося надіслати відео протягом 5 хвилин. Файл видалено."
+        error_message = "Error: the video could not be sent within 5 minutes. The file was deleted."
         logger.error(error_message)
         await context.bot.send_message(chat_id=chat_id, text=error_message)
     except Exception as e:
-        error_message = f"Помилка: {str(e)}"
+        error_message = f"Error: {str(e)}"
         logger.error(error_message)
         await context.bot.send_message(chat_id=chat_id, text=error_message)
 
@@ -201,10 +201,10 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
     tiktok_link = update.message.text.strip()
     
     if not re.match(r'https?://(?:www\.|vm\.|vt\.)?tiktok\.com/', tiktok_link):
-        await update.message.reply_text("Це не схоже на коректне посилання TikTok. Спробуйте ще раз.")
+        await update.message.reply_text("This does not look like a valid TikTok link. Please try again.")
         return WAITING_FOR_TIKTOK_LINK
 
-    message = await update.message.reply_text("Завантаження розпочато... Будь ласка, зачекайте.")
+    message = await update.message.reply_text("Download started... Please wait.")
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     output_folder = os.path.join(TEMP_FOLDER, str(user_id))
@@ -227,12 +227,12 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
         }
 
         video_path = os.path.join(output_folder, 'tiktok_video.mp4')
-        await message.edit_text("Отримання відео без водяного знаку...")
+        await message.edit_text("Getting the video without a watermark...")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(tiktok_link, download=False)
             if info.get('duration', 0) == 0:
-                raise Exception("Це фото або GIF. Бот підтримує лише відео з TikTok.")
+                raise Exception("This is a photo or GIF. The bot supports TikTok videos only.")
             validate_video_size(info)
             
             ydl.download([tiktok_link])
@@ -242,19 +242,19 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
             if mp4_files:
                 video_path = os.path.join(output_folder, mp4_files[0])
             else:
-                raise Exception("Не вдалося знайти завантажене відео")
+                raise Exception("Could not find the downloaded video")
 
         if os.path.getsize(video_path) > MAX_VIDEO_SIZE_BYTES:
-            raise VideoTooLargeError("Відео більше 200 МБ. Завантаження скасовано.")
+            raise VideoTooLargeError("The video is larger than 200 MB. Download cancelled.")
 
-        await message.edit_text("Надсилання відео в чат...")
+        await message.edit_text("Sending video to the chat...")
         
         with open(video_path, 'rb') as video_file:
             await asyncio.wait_for(
                 context.bot.send_video(
                     chat_id=chat_id,
                     video=video_file,
-                    caption="Ось ваше відео з TikTok!",
+                    caption="Here is your TikTok video!",
                     supports_streaming=True
                 ),
                 timeout=VIDEO_SEND_TIMEOUT_SECONDS
@@ -268,16 +268,16 @@ async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         await context.bot.send_message(
             chat_id=chat_id,
-            text="Готово! Що бажаєте зробити далі?",
+            text="Done! What would you like to do next?",
             reply_markup=reply_markup
         )
 
     except asyncio.TimeoutError:
-        error_message = "Помилка: не вдалося надіслати відео протягом 5 хвилин. Файл видалено."
+        error_message = "Error: the video could not be sent within 5 minutes. The file was deleted."
         logger.error(error_message)
         await context.bot.send_message(chat_id=chat_id, text=error_message)
     except Exception as e:
-        error_message = f"Помилка: {str(e)}"
+        error_message = f"Error: {str(e)}"
         logger.error(error_message)
         await context.bot.send_message(chat_id=chat_id, text=error_message)
 
@@ -307,7 +307,7 @@ def compress_video_sync(input_file, output_file, width, height, video_bitrate, a
         )
         return os.path.exists(output_file)
     except Exception as e:
-        logger.error(f"Помилка компресії: {str(e)}")
+        logger.error(f"Compression error: {str(e)}")
         return False
 
 def calculate_optimal_bitrate(duration, target_size_mb=45):
@@ -327,7 +327,7 @@ def get_optimal_resolution(original_width, original_height, target_bitrate):
     return original_width, original_height
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text('Операцію скасовано.')
+    await update.message.reply_text('Operation cancelled.')
     return ConversationHandler.END
 
 def main() -> None:
@@ -335,7 +335,7 @@ def main() -> None:
     application = Application.builder().token(token).build()
     
     application.add_handler(MessageHandler(
-        filters.Regex("^🔄 Головне меню$"),
+        filters.Regex("^🔄 Main Menu$"),
         start,
         block=False
     ))

@@ -122,6 +122,9 @@ VIDEO_FORMAT_OPTS = {
 }
 
 def download_media(url: str, format: str, download_id: str) -> tuple[str, str]:
+    if 'tiktok.com' in url and '/photo/' in url:
+        raise Exception("Це TikTok-фото, а не відео. Підтримуються лише відео з TikTok.")
+
     output_folder = os.path.join(TEMP_FOLDER, download_id)
     os.makedirs(output_folder, exist_ok=True)
 
