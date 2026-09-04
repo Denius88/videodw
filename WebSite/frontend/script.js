@@ -40,7 +40,7 @@ const API_URL = '/api';
 const URL_PATTERNS = {
     youtube: /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/,
     instagram: /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|share)\/[\w-]+\/?/,
-    tiktok: /https?:\/\/(?:www\.|vm\.)?tiktok\.com\//
+    tiktok: /https?:\/\/(?:www\.|vm\.|vt\.)?tiktok\.com\//
 };
 
 const translations = {

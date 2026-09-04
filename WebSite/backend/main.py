@@ -35,7 +35,7 @@ MAX_VIDEO_SIZE_BYTES = 200 * 1024 * 1024
 URL_PATTERNS = {
     'youtube': re.compile(r'^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+'),
     'instagram': re.compile(r'https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|share)\/[\w-]+\/?'),
-    'tiktok': re.compile(r'https?:\/\/(?:www\.|vm\.)?tiktok\.com\/')
+    'tiktok': re.compile(r'https?:\/\/(?:www\.|vm\.|vt\.)?tiktok\.com\/')
 }
 
 class DownloadRequest(BaseModel):

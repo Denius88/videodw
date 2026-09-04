@@ -200,7 +200,7 @@ async def process_instagram_link(update: Update, context: ContextTypes.DEFAULT_T
 async def process_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     tiktok_link = update.message.text.strip()
     
-    if not re.match(r'https?://(?:www\.|vm\.)?tiktok\.com/', tiktok_link):
+    if not re.match(r'https?://(?:www\.|vm\.|vt\.)?tiktok\.com/', tiktok_link):
         await update.message.reply_text("Це не схоже на коректне посилання TikTok. Спробуйте ще раз.")
         return WAITING_FOR_TIKTOK_LINK
 
