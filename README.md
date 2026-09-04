@@ -7,6 +7,8 @@
 
 VideoDW is a Python-based media downloader for YouTube, Instagram, and TikTok. It provides a web interface and a Telegram bot, with Docker and Nginx configuration for VPS deployment.
 
+🌐 **Try VideoDW online:** [https://videodw.pp.ua](https://videodw.pp.ua)
+
 The project demonstrates advanced backend capabilities, including real-time progress streaming (Server-Sent Events), dynamic video compression via FFmpeg, and asynchronous task management.
 
 ## ✨ Core Features
