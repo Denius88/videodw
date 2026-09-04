@@ -5,42 +5,48 @@
 ![Telegram API](https://img.shields.io/badge/Telegram_Bot-API-blue.svg?logo=telegram)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-processing-green.svg)
 
-VideoDW is a robust, asynchronous Python-based backend service designed to extract, process, and download media from major social platforms (YouTube, Instagram, TikTok). It provides two distinct client interfaces: a **Telegram Bot** and a **Web UI**, both utilizing the same core processing logic.
+VideoDW is a Python-based media downloader for YouTube, Instagram, and TikTok. It provides a web interface and a Telegram bot, with Docker and Nginx configuration for VPS deployment.
 
 The project demonstrates advanced backend capabilities, including real-time progress streaming (Server-Sent Events), dynamic video compression via FFmpeg, and asynchronous task management.
 
 ## ✨ Core Features
 
-*   **Multi-Platform Support:** Seamlessly handles YouTube, Instagram (Reels/Posts), and TikTok URLs (including watermark bypassing).
-*   **Format Extraction:** Supports both raw high-quality `MP4` video and `MP3` audio extraction.
+*   **Multi-Platform Support:** Handles YouTube, Instagram (Reels/Posts), and TikTok URLs.
+*   **Format Extraction:** Supports `MP4` video and `MP3` audio through the web interface.
 *   **Dual Interfaces:**
-    *   🤖 **Telegram Bot Interface:** Asynchronous bot using `python-telegram-bot` (v20+), featuring conversation handlers, dynamic inline keyboards, and automated file size optimization to bypass API limits.
-    *   🌐 **Web Service Interface:** Built with `FastAPI`, featuring a responsive Vanilla JS/CSS frontend with Dark/Light modes, i18n (EN/UK), and real-time progress bars via `StreamingResponse`.
-*   **Advanced Media Processing:** 
-    *   Dynamic bitrate calculation to keep files under specific size limits (e.g., Telegram's 50MB limit).
-    *   Post-processing and multiplexing using FFmpeg.
-*   **Resource Management:** Automated cleanup of temporary files using FastAPI's `BackgroundTasks` and Python's `shutil` to prevent server storage bloat.
+   *   🤖 **Telegram Bot Interface:** Asynchronous `python-telegram-bot` bot for Instagram and TikTok downloads.
+   *   🌐 **Web Interface:** FastAPI backend with a responsive Vanilla JS/CSS frontend, dark/light modes, Ukrainian/English UI, and streamed progress updates.
+*   **Media Processing:** MP4 conversion and audio extraction using FFmpeg.
+*   **200 MB Video Limit:** Downloads stop when a video exceeds 200 MB; temporary files are removed after failures or timeouts.
+*   **Deployment:** Docker Compose with FastAPI, Telegram bot, and Nginx services.
 
 ## 🛠️ Technical Stack
 
-*   **Backend Framework:** FastAPI, Python `asyncio`
-*   **Bot Framework:** python-telegram-bot
-*   **Media Processing:** yt-dlp, FFmpeg-python
+*   **Language:** Python 3.9+
+*   **Web Backend:** FastAPI, Uvicorn, Pydantic, Python `asyncio`
+*   **Telegram Bot:** python-telegram-bot
+*   **Media:** yt-dlp, FFmpeg, ffmpeg-python
 *   **Frontend:** HTML5, CSS3, Vanilla JavaScript
-*   **API Architecture:** RESTful endpoints, Server-Sent Events (SSE) for real-time progress updates.
+*   **Proxy and Deployment:** Nginx, Docker, Docker Compose
+*   **API:** REST endpoints with streamed JSON progress updates
 
 ## 🏗️ Project Structure
 
 ```text
 videodw/
 ├── TelegramBot/
-│   ├── bot.py             # Main asynchronous Telegram bot logic
-│   └── temp_downloads/    # Temporary storage (auto-cleaned)
+│   └── bot_main.py        # Telegram bot entry point
 ├── WebSite/
-│   ├── app.py             # FastAPI backend server
-│   ├── index.html         # Frontend interface
-│   ├── script.js          # Client-side logic & SSE parsing
-│   └── styles.css         # Responsive UI styling
+│   ├── backend/
+│   │   └── main.py        # FastAPI backend
+│   └── frontend/
+│       ├── index.html      # Web interface
+│       ├── script.js       # Client-side logic
+│       └── styles.css      # Frontend styles
+├── Dockerfile             # Python image with FFmpeg
+├── docker-compose.yml     # Backend, bot, and Nginx services
+├── nginx.conf             # Static files and /api reverse proxy
+├── .env.example           # Environment variable template
 ├── requirements.txt       # Python dependencies
 └── README.md
 ```
@@ -50,6 +56,7 @@ videodw/
 ### Prerequisites
 *   Python 3.9 or higher
 *   **FFmpeg** installed and added to your system's PATH.
+*   Docker and Docker Compose for VPS deployment.
 
 ### Installation
 
@@ -59,9 +66,9 @@ videodw/
    cd videodw
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies globally or in a virtual environment:**
    ```bash
-   pip install -r requirements.txt
+   python3 -m pip install -r requirements.txt
    ```
 
 3. **Environment Setup:**
@@ -74,15 +81,20 @@ videodw/
 
 **To run the Web Service (FastAPI):**
 ```bash
-cd WebSite
-uvicorn app:app --host 0.0.0.0 --port 8000
+python3 WebSite/backend/main.py
 ```
-*The web interface will be available at `http://localhost:8000`. Keep `index.html` running in your browser to interact with the API.*
+
+**To serve the frontend locally:**
+```bash
+cd WebSite/frontend
+python3 -m http.server 5500
+```
+The web interface will be available at `http://localhost:5500`.
 
 **To run the Telegram Bot:**
 ```bash
 cd TelegramBot
-python bot.py
+python3 bot_main.py
 ```
 
 ### VPS Deployment with Docker and Nginx
